@@ -10,9 +10,9 @@
 #pragma once
 
 #include "QGCMAVLink.h"
-#include "QmlObjectListModel.h"
 
-#include <QObject>
+#include <QtCore/QMap>
+#include <QtCore/QObject>
 
 /// Class which represents sensor info from the SYS_STATUS mavlink message
 class SysStatusSensorInfo : public QObject

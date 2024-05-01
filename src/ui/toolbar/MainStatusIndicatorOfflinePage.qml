@@ -20,6 +20,7 @@ import QGroundControl.FactSystem
 import QGroundControl.FactControls
 
 ToolIndicatorPage {
+    id:         control
     showExpand: true
 
     property var    linkConfigs:            QGroundControl.linkManager.linkConfigurations
@@ -38,15 +39,14 @@ ToolIndicatorPage {
     }
 
     contentComponent: Component {
-            ColumnLayout { 
-            spacing: ScreenTools.defaultFontPixelHeight / 2
+        SettingsGroupLayout { 
+            heading: qsTr("Select Link to Connect")
 
             QGCLabel {
-                Layout.alignment:   Qt.AlignTop
-                text:               noLinks ? qsTr("No Links Configured") : qsTr("Connect To Link")
-                font.pointSize:     noLinks ? ScreenTools.largeFontPointSize : ScreenTools.defaultFontPointSize
+                text:       qsTr("No Links Configured")
+                visible:    noLinks
             }
-            
+        
             Repeater {
                 model: linkConfigs
 
@@ -59,7 +59,7 @@ ToolIndicatorPage {
 
                     onClicked: {
                         QGroundControl.linkManager.createConnectedLink(object)
-                        drawer.close()
+                        mainWindow.closeIndicatorDrawer()
                     }
                 }
             }
@@ -70,24 +70,21 @@ ToolIndicatorPage {
         ColumnLayout {
             spacing: ScreenTools.defaultFontPixelHeight / 2
 
-            IndicatorPageGroupLayout {
-                RowLayout {
-                    QGCLabel { Layout.fillWidth: true; text: qsTr("Communication Links") }
-                    
-                    QGCButton {
-                        text:       qsTr("Configure")
-                        onClicked: {
-                            mainWindow.showSettingsTool(qsTr("Comm Links"))
-                            drawer.close()
-                        }
+            SettingsGroupLayout {
+                LabelledButton {
+                    label:      qsTr("Communication Links")
+                    buttonText: qsTr("Configure")
+
+                    onClicked: {
+                        mainWindow.showSettingsTool(qsTr("Comm Links"))
+                        mainWindow.closeIndicatorDrawer()
                     }
                 }
             }
 
-            IndicatorPageGroupLayout {
+            SettingsGroupLayout {
                 heading:        qsTr("AutoConnect")
                 visible:        autoConnectSettings.visible
-                showDivider:    false
 
                 Repeater {
                     id: autoConnectRepeater
@@ -99,9 +96,10 @@ ToolIndicatorPage {
                         autoConnectSettings.autoConnectLibrePilot,
                         autoConnectSettings.autoConnectUDP,
                         autoConnectSettings.autoConnectZeroConf,
+                        autoConnectSettings.autoConnectRTKGPS,
                     ]
 
-                    property var names: [ qsTr("Pixhawk"), qsTr("SiK Radio"), qsTr("PX4 Flow"), qsTr("LibrePilot"), qsTr("UDP"), qsTr("Zero-Conf") ]
+                    property var names: [ qsTr("Pixhawk"), qsTr("SiK Radio"), qsTr("PX4 Flow"), qsTr("LibrePilot"), qsTr("UDP"), qsTr("Zero-Conf"), qsTr("RTK") ]
 
                     FactCheckBoxSlider {
                         Layout.fillWidth:   true

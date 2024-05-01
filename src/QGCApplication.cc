@@ -16,30 +16,28 @@
  *
  */
 
-#include <QFile>
-#include <QRegularExpression>
-#include <QFontDatabase>
-#include <QQuickWindow>
-#include <QQuickImageProvider>
-#include <QQuickStyle>
+#include <QtCore/QFile>
+#include <QtCore/QRegularExpression>
+#include <QtGui/QFontDatabase>
+#include <QtQuick/QQuickWindow>
+#include <QtQuick/QQuickImageProvider>
+#include <QtQuickControls2/QQuickStyle>
 
 #ifdef QGC_ENABLE_BLUETOOTH
-#include <QBluetoothLocalDevice>
+#include <QtBluetooth/QBluetoothLocalDevice>
 #endif
-
-#include <QDebug>
 
 #if defined(QGC_GST_STREAMING)
 #include "GStreamer.h"
 #endif
 
-#include "QGC.h"
+#include "QGCConfig.h"
 #include "QGCApplication.h"
 #include "CmdLineOptParser.h"
 #include "UDPLink.h"
 #include "LinkManager.h"
+#include "MAVLinkProtocol.h"
 #include "UASMessageHandler.h"
-#include "QGCTemporaryFile.h"
 #include "QGCPalette.h"
 #include "QGCMapPalette.h"
 #include "QGCLoggingCategory.h"
@@ -60,11 +58,9 @@
 #include "QGCGeoBoundingCube.h"
 #include "MissionManager.h"
 #include "QGroundControlQmlGlobal.h"
-#include "FlightMapSettings.h"
 #include "FlightPathSegment.h"
 #include "PlanMasterController.h"
 #include "VideoManager.h"
-#include "VideoReceiver.h"
 #include "LogDownloadController.h"
 #if !defined(QGC_DISABLE_MAVLINK_INSPECTOR)
 #include "MAVLinkInspectorController.h"
@@ -72,12 +68,12 @@
 #include "HorizontalFactValueGrid.h"
 #include "InstrumentValueData.h"
 #include "AppMessages.h"
-#include "SimulatedPosition.h"
 #include "PositionManager.h"
 #include "FollowMe.h"
 #include "MissionCommandTree.h"
 #include "QGCMapPolygon.h"
 #include "QGCMapCircle.h"
+#include "QGCMapEngine.h"
 #include "ParameterManager.h"
 #include "SettingsManager.h"
 #include "QGCCorePlugin.h"
@@ -88,7 +84,6 @@
 #include "FactValueSliderListModel.h"
 #include "ShapeFileHelper.h"
 #include "QGCFileDownload.h"
-#include "FirmwareImage.h"
 #include "MavlinkConsoleController.h"
 #include "GeoTagController.h"
 #include "LogReplayLink.h"
@@ -105,10 +100,15 @@
 #include "RemoteIDManager.h"
 #include "CustomAction.h"
 #include "CustomActionManager.h"
-
-#if defined(QGC_ENABLE_PAIRING)
-#include "PairingManager.h"
-#endif
+#include "AudioOutput.h"
+#include "CityMapGeometry.h"
+#include "Viewer3DQmlBackend.h"
+#include "Viewer3DQmlVariableTypes.h"
+#include "OsmParser.h"
+#include "Viewer3DManager.h"
+#include "Viewer3DTerrainGeometry.h"
+#include "Viewer3DTerrainTexture.h"
+#include "LinkConfiguration.h"
 
 #ifndef __mobile__
 #include "FirmwareUpgradeController.h"
@@ -118,14 +118,6 @@
 #include "SerialLink.h"
 #endif
 
-#ifndef __mobile__
-#include "GPS/GPSManager.h"
-#endif
-
-#ifdef QGC_RTLAB_ENABLED
-#include "OpalLink.h"
-#endif
-
 #ifdef Q_OS_LINUX
 #ifndef __mobile__
 #include <unistd.h>
@@ -133,7 +125,6 @@
 #endif
 #endif
 
-#include "QGCMapEngine.h"
 
 class FinishVideoInitialization : public QRunnable
 {
@@ -206,27 +197,6 @@ QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
                     "sudo apt-get remove modemmanager</pre>").arg(qgcApp()->applicationName())));
             return;
         }
-        // Determine if we have the correct permissions to access USB serial devices
-        QFile permFile("/etc/group");
-        if(permFile.open(QIODevice::ReadOnly)) {
-            while(!permFile.atEnd()) {
-                QString line = permFile.readLine();
-                if (line.contains("dialout") && !line.contains(getenv("USER"))) {
-                    permFile.close();
-                    _exitWithError(QString(
-                        tr("The current user does not have the correct permissions to access serial devices. "
-                           "You should also remove modemmanager since it also interferes.<br/><br/>"
-                           "If you are using Ubuntu, execute the following commands to fix these issues:<br/>"
-                           "<pre>sudo usermod -a -G dialout $USER<br/>"
-                           "sudo apt-get remove modemmanager</pre>")));
-                    return;
-                }
-            }
-            permFile.close();
-        }
-
-        // Always set style to default, this way QT_QUICK_CONTROLS_STYLE environment variable doesn't cause random changes in ui
-        QQuickStyle::setStyle("Default");
     }
 #endif
 #endif
@@ -356,17 +326,6 @@ QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
     _toolbox = new QGCToolbox(this);
     _toolbox->setChildToolboxes();
 
-#ifndef __mobile__
-    _gpsRtkFactGroup = new GPSRTKFactGroup(this);
-   GPSManager *gpsManager = _toolbox->gpsManager();
-   if (gpsManager) {
-       connect(gpsManager, &GPSManager::onConnect,          this, &QGCApplication::_onGPSConnect);
-       connect(gpsManager, &GPSManager::onDisconnect,       this, &QGCApplication::_onGPSDisconnect);
-       connect(gpsManager, &GPSManager::surveyInStatus,     this, &QGCApplication::_gpsSurveyInStatus);
-       connect(gpsManager, &GPSManager::satelliteUpdate,    this, &QGCApplication::_gpsNumSatellites);
-   }
-#endif /* __mobile__ */
-
     _checkForNewVersion();
 }
 
@@ -432,7 +391,6 @@ void QGCApplication::_shutdown()
     // Close out all Qml before we delete toolbox. This way we don't get all sorts of null reference complaints from Qml.
     delete _qmlAppEngine;
     delete _toolbox;
-    delete _gpsRtkFactGroup;
 }
 
 QGCApplication::~QGCApplication()
@@ -448,7 +406,7 @@ void QGCApplication::_initCommon()
     static const char* kQGCControllers  = "QGroundControl.Controllers";
     static const char* kQGCVehicle      = "QGroundControl.Vehicle";
     static const char* kQGCTemplates    = "QGroundControl.Templates";
-
+    
     QSettings settings;
 
     // Register our Qml objects
@@ -456,12 +414,21 @@ void QGCApplication::_initCommon()
     qmlRegisterType<QGCPalette>     ("QGroundControl.Palette", 1, 0, "QGCPalette");
     qmlRegisterType<QGCMapPalette>  ("QGroundControl.Palette", 1, 0, "QGCMapPalette");
 
+    // For 3D viewer types
+    qmlRegisterType<GeoCoordinateType>                  ("QGroundControl.Viewer3D", 1, 0, "GeoCoordinateType");
+    qmlRegisterType<CityMapGeometry>                    ("QGroundControl.Viewer3D", 1, 0, "CityMapGeometry");
+    qmlRegisterType<Viewer3DManager>                    ("QGroundControl.Viewer3D", 1, 0, "Viewer3DManager");
+    qmlRegisterUncreatableType<Viewer3DQmlBackend>      ("QGroundControl.Viewer3D", 1, 0, "Viewer3DQmlBackend",          kRefOnly);
+    qmlRegisterUncreatableType<OsmParser>               ("QGroundControl.Viewer3D", 1, 0, "OsmParser",                   kRefOnly);
+    qmlRegisterType<Viewer3DTerrainGeometry>            ("QGroundControl.Viewer3D", 1, 0, "Viewer3DTerrainGeometry");
+    qmlRegisterType<Viewer3DTerrainTexture>             ("QGroundControl.Viewer3D", 1, 0, "Viewer3DTerrainTexture");
+    
     qmlRegisterUncreatableType<Vehicle>                 (kQGCVehicle,                       1, 0, "Vehicle",                    kRefOnly);
     qmlRegisterUncreatableType<MissionManager>          (kQGCVehicle,                       1, 0, "MissionManager",             kRefOnly);
     qmlRegisterUncreatableType<ParameterManager>        (kQGCVehicle,                       1, 0, "ParameterManager",           kRefOnly);
     qmlRegisterUncreatableType<VehicleObjectAvoidance>  (kQGCVehicle,                       1, 0, "VehicleObjectAvoidance",     kRefOnly);
     qmlRegisterUncreatableType<QGCCameraManager>        (kQGCVehicle,                       1, 0, "QGCCameraManager",           kRefOnly);
-    qmlRegisterUncreatableType<QGCCameraControl>        (kQGCVehicle,                       1, 0, "QGCCameraControl",           kRefOnly);
+    qmlRegisterUncreatableType<MavlinkCameraControl>   (kQGCVehicle,                       1, 0, "MavlinkCameraControl",      kRefOnly);
     qmlRegisterUncreatableType<QGCVideoStreamInfo>      (kQGCVehicle,                       1, 0, "QGCVideoStreamInfo",         kRefOnly);
     qmlRegisterUncreatableType<LinkInterface>           (kQGCVehicle,                       1, 0, "LinkInterface",              kRefOnly);
     qmlRegisterUncreatableType<VehicleLinkManager>      (kQGCVehicle,                       1, 0, "VehicleLinkManager",         kRefOnly);
@@ -483,9 +450,6 @@ void QGCApplication::_initCommon()
     qmlRegisterType<LogReplayLinkController>        (kQGroundControl,                       1, 0, "LogReplayLinkController");
 #if !defined(QGC_DISABLE_MAVLINK_INSPECTOR)
     qmlRegisterUncreatableType<MAVLinkChartController> (kQGroundControl,                    1, 0, "MAVLinkChart",               kRefOnly);
-#endif
-#if defined(QGC_ENABLE_PAIRING)
-    qmlRegisterUncreatableType<PairingManager>      (kQGroundControl,                       1, 0, "PairingManager",             kRefOnly);
 #endif
 
     qmlRegisterUncreatableType<AutoPilotPlugin>     ("QGroundControl.AutoPilotPlugin",      1, 0, "AutoPilotPlugin",            kRefOnly);
@@ -552,6 +516,12 @@ bool QGCApplication::_initForNormalAppBoot()
 {
     QSettings settings;
 
+    ( void ) connect( toolbox()->settingsManager()->appSettings()->audioMuted(), &Fact::valueChanged, AudioOutput::instance(), []( QVariant value )
+    {
+        AudioOutput::instance()->setMuted( value.toBool() );
+    });
+    AudioOutput::instance()->setMuted( toolbox()->settingsManager()->appSettings()->audioMuted()->rawValue().toBool() );
+
     _qmlAppEngine = toolbox()->corePlugin()->createQmlApplicationEngine(this);
     toolbox()->corePlugin()->createRootWindow(_qmlAppEngine);
 
@@ -571,6 +541,33 @@ bool QGCApplication::_initForNormalAppBoot()
     if (msgHandler) {
         msgHandler->showErrorsInToolbar();
     }
+
+    #ifdef Q_OS_LINUX
+    #ifndef __mobile__
+    #ifndef NO_SERIAL_LINK
+        if (!_runningUnitTests) {
+            // Determine if we have the correct permissions to access USB serial devices
+            QFile permFile("/etc/group");
+            if(permFile.open(QIODevice::ReadOnly)) {
+                while(!permFile.atEnd()) {
+                    QString line = permFile.readLine();
+                    if (line.contains("dialout") && !line.contains(getenv("USER"))) {
+                        permFile.close();
+                        showAppMessage(QString(
+                            tr("The current user does not have the correct permissions to access serial devices. "
+                               "You should also remove modemmanager since it also interferes.<br/><br/>"
+                               "If you are using Ubuntu, execute the following commands to fix these issues:<br/>"
+                               "<pre>sudo usermod -a -G dialout $USER<br/>"
+                               "sudo apt-get remove modemmanager</pre>")));
+                        break;
+                    }
+                }
+                permFile.close();
+            }
+        }
+    #endif
+    #endif
+    #endif
 
     // Now that main window is up check for lost log files
     connect(this, &QGCApplication::checkForLostLogFiles, toolbox()->mavlinkProtocol(), &MAVLinkProtocol::checkForLostLogFiles);
@@ -805,7 +802,8 @@ QQuickWindow* QGCApplication::mainRootWindow()
 void QGCApplication::showSetupView()
 {
     if(_rootQmlObject()) {
-        QMetaObject::invokeMethod(_rootQmlObject(), "showSetupTool");
+      QVariant arg = "";
+      QMetaObject::invokeMethod(_rootQmlObject(), "showVehicleSetupTool", Q_ARG(QVariant, arg));
     }
 }
 
@@ -875,33 +873,6 @@ bool QGCApplication::_parseVersionText(const QString& versionString, int& majorV
     }
 
     return false;
-}
-
-
-void QGCApplication::_onGPSConnect()
-{
-    _gpsRtkFactGroup->connected()->setRawValue(true);
-}
-
-void QGCApplication::_onGPSDisconnect()
-{
-    _gpsRtkFactGroup->connected()->setRawValue(false);
-}
-
-void QGCApplication::_gpsSurveyInStatus(float duration, float accuracyMM,  double latitude, double longitude, float altitude, bool valid, bool active)
-{
-    _gpsRtkFactGroup->currentDuration()->setRawValue(duration);
-    _gpsRtkFactGroup->currentAccuracy()->setRawValue(static_cast<double>(accuracyMM) / 1000.0);
-    _gpsRtkFactGroup->currentLatitude()->setRawValue(latitude);
-    _gpsRtkFactGroup->currentLongitude()->setRawValue(longitude);
-    _gpsRtkFactGroup->currentAltitude()->setRawValue(altitude);
-    _gpsRtkFactGroup->valid()->setRawValue(valid);
-    _gpsRtkFactGroup->active()->setRawValue(active);
-}
-
-void QGCApplication::_gpsNumSatellites(int numSatellites)
-{
-    _gpsRtkFactGroup->numSatellites()->setRawValue(numSatellites);
 }
 
 QString QGCApplication::cachedParameterMetaDataFile(void)

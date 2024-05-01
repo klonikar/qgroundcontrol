@@ -7,31 +7,24 @@
  *
  ****************************************************************************/
 
-#include <QtGlobal>
-#include <QApplication>
-#include <QIcon>
-#include <QSslSocket>
-#include <QMessageBox>
-#include <QProcessEnvironment>
-#include <QHostAddress>
-#include <QUdpSocket>
-#include <QtPlugin>
-#include <QStringListModel>
-#include <QQuickStyle>
-#include <QQuickWindow>
-
-#include "QGC.h"
 #include "QGCApplication.h"
+#include "QGC.h"
 #include "AppMessages.h"
-
-#include <iostream>
-
+#include "QGCMapEngine.h"
+#include "Vehicle.h"
 #ifndef __mobile__
+    #ifndef NO_SERIAL_LINK
+        #include <QtSerialPort/QSerialPort>
+    #endif
     #include "QGCSerialPortInfo.h"
     #include "RunGuard.h"
-#ifndef NO_SERIAL_LINK
-    #include <QSerialPort>
 #endif
+
+#ifdef Q_OS_ANDROID
+    #include "AndroidInterface.h"
+    #ifndef NO_SERIAL_LINK
+        #include "qserialport.h"
+    #endif
 #endif
 
 #ifdef UNITTEST_BUILD
@@ -45,11 +38,16 @@
     #endif
 #endif
 
+#include <QtWidgets/QApplication>
+#include <QtGui/QIcon>
+#include <QtWidgets/QMessageBox>
+#include <QtCore/QProcessEnvironment>
+#include <QtCore/QtPlugin>
+#include <QtQuickControls2/QQuickStyle>
+#include <QtQuick/QQuickWindow>
 #ifdef QGC_ENABLE_BLUETOOTH
 #include <QtBluetooth/QBluetoothSocket>
 #endif
-
-#include "QGCMapEngine.h"
 
 /* SDL does ugly things to main() */
 #ifdef main
@@ -65,6 +63,7 @@
 #ifdef Q_OS_WIN
 
 #include <windows.h>
+#include <iostream>
 
 /// @brief CRT Report Hook installed using _CrtSetReportHook. We install this hook when
 /// we don't want asserts to pop a dialog on windows.
@@ -77,130 +76,6 @@ int WindowsCrtReportHook(int reportType, char* message, int* returnValue)
     return true;                        // We handled this fully ourselves
 }
 
-#endif
-
-#if defined(__android__)
-#include <jni.h>
-#include "AndroidInterface.h"
-#ifndef FIXME_QT6_DISABLE_ANDROID_JOYSTICK
-#include "JoystickAndroid.h"
-#endif
-#if defined(QGC_ENABLE_PAIRING)
-#include "PairingManager.h"
-#endif
-#if !defined(NO_SERIAL_LINK)
-#include "qserialport.h"
-#endif
-
-static jobject _class_loader = nullptr;
-static jobject _context = nullptr;
-
-//-----------------------------------------------------------------------------
-extern "C" {
-    void gst_amc_jni_set_java_vm(JavaVM *java_vm);
-
-    jobject gst_android_get_application_class_loader(void)
-    {
-        return _class_loader;
-    }
-}
-
-//-----------------------------------------------------------------------------
-static void
-gst_android_init(JNIEnv* env, jobject context)
-{
-    jobject class_loader = nullptr;
-
-    jclass context_cls = env->GetObjectClass(context);
-    if (!context_cls) {
-        return;
-    }
-
-    jmethodID get_class_loader_id = env->GetMethodID(context_cls, "getClassLoader", "()Ljava/lang/ClassLoader;");
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-        return;
-    }
-
-    class_loader = env->CallObjectMethod(context, get_class_loader_id);
-    if (env->ExceptionCheck()) {
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-        return;
-    }
-
-    _context = env->NewGlobalRef(context);
-    _class_loader = env->NewGlobalRef (class_loader);
-}
-
-//-----------------------------------------------------------------------------
-static const char kJniQGCActivityClassName[] {"org/mavlink/qgroundcontrol/QGCActivity"};
-
-void setNativeMethods(void)
-{
-    JNINativeMethod javaMethods[] {
-        {"nativeInit", "()V", reinterpret_cast<void *>(gst_android_init)}
-    };
-
-    QJniEnvironment jniEnv;
-    if (jniEnv->ExceptionCheck()) {
-        jniEnv->ExceptionDescribe();
-        jniEnv->ExceptionClear();
-    }
-
-    jclass objectClass = jniEnv->FindClass(kJniQGCActivityClassName);
-    if(!objectClass) {
-        qWarning() << "Couldn't find class:" << kJniQGCActivityClassName;
-        return;
-    }
-
-    jint val = jniEnv->RegisterNatives(objectClass, javaMethods, sizeof(javaMethods) / sizeof(javaMethods[0]));
-
-    if (val < 0) {
-        qWarning() << "Error registering methods: " << val;
-    } else {
-        qDebug() << "Main Native Functions Registered";
-    }
-
-    if (jniEnv->ExceptionCheck()) {
-        jniEnv->ExceptionDescribe();
-        jniEnv->ExceptionClear();
-    }
-}
-
-//-----------------------------------------------------------------------------
-jint JNI_OnLoad(JavaVM* vm, void* reserved)
-{
-    Q_UNUSED(reserved);
-
-    qDebug() << "JNI_OnLoa QGC called";
-    JNIEnv* env;
-    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
-        return -1;
-    }
-
-    setNativeMethods();
-
-#if defined(QGC_GST_STREAMING)
-    // Tell the androidmedia plugin about the Java VM
-    gst_amc_jni_set_java_vm(vm);
-#endif
-
- #if !defined(NO_SERIAL_LINK)
-    QSerialPort::setNativeMethods();
- #endif
-
-#ifndef FIXME_QT6_DISABLE_ANDROID_JOYSTICK
-    JoystickAndroid::setNativeMethods();
-#endif
-
-#if defined(QGC_ENABLE_PAIRING)
-    PairingManager::setNativeMethods();
-#endif
-
-    return JNI_VERSION_1_6;
-}
 #endif
 
 // To shut down QGC on Ctrl+C on Linux
@@ -260,7 +135,7 @@ int main(int argc, char *argv[])
     AppMessages::installHandler();
 
 #ifdef Q_OS_MAC
-#ifndef __ios__
+#ifndef Q_OS_IOS
     // Prevent Apple's app nap from screwing us over
     // tip: the domain can be cross-checked on the command line with <defaults domains>
     QProcess::execute("defaults", {"write org.qgroundcontrol.qgroundcontrol NSAppSleepDisabled -bool YES"});
@@ -356,9 +231,14 @@ int main(int argc, char *argv[])
 #endif
 #endif // QT_DEBUG
 
+#ifdef Q_OS_DARWIN
+    // Gstreamer video playback requires OpenGL
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
+#endif
+
+    QQuickStyle::setStyle("Basic");
     QGCApplication* app = new QGCApplication(argc, argv, runUnitTests);
     Q_CHECK_PTR(app);
-    QQuickStyle::setStyle("Basic");
     if(app->isErrorState()) {
         app->exec();
         return -1;
@@ -403,8 +283,9 @@ int main(int argc, char *argv[])
 #endif
     {
 
-#ifdef __android__
+#ifdef Q_OS_ANDROID
         AndroidInterface::checkStoragePermissions();
+        QNativeInterface::QAndroidApplication::hideSplashScreen(333);
 #endif
         if (!app->_initForNormalAppBoot()) {
             return -1;

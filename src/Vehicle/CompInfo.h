@@ -10,10 +10,8 @@
 #pragma once
 
 #include "QGCMAVLink.h"
-#include "QGCLoggingCategory.h"
-#include "FactMetaData.h"
 
-#include <QObject>
+#include <QtCore/QObject>
 
 class FactMetaData;
 class Vehicle;

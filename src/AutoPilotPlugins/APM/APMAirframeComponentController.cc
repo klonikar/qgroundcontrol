@@ -8,18 +8,15 @@
  ****************************************************************************/
 
 #include "APMAirframeComponentController.h"
-#include "QGCMAVLink.h"
 #include "MultiVehicleManager.h"
 #include "QGCApplication.h"
 #include "QGCFileDownload.h"
 #include "ParameterManager.h"
+#include "FactSystem.h"
 #include "ArduCopterFirmwarePlugin.h"
 #include "ArduRoverFirmwarePlugin.h"
 
 #include <QVariant>
-#include <QQmlProperty>
-#include <QStandardPaths>
-#include <QDir>
 #include <QJsonParseError>
 #include <QJsonObject>
 

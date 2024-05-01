@@ -9,21 +9,22 @@
 
 #pragma once
 
-#include "QGCLoggingCategory.h"
 #include "QGCMAVLink.h"
 #include "StateMachine.h"
-#include "ComponentInformationCache.h"
-#include "ComponentInformationTranslation.h"
 
-#include <QElapsedTimer>
+#include <QtCore/QElapsedTimer>
+#include <QtCore/QLoggingCategory>
 
 Q_DECLARE_LOGGING_CATEGORY(ComponentInformationManagerLog)
 
 class Vehicle;
 class ComponentInformationManager;
+class ComponentInformationTranslation;
+class ComponentInformationCache;
 class CompInfo;
 class CompInfoParam;
 class CompInfoGeneral;
+class QGCCachedFileDownload;
 
 class RequestMetaDataTypeStateMachine : public StateMachine
 {

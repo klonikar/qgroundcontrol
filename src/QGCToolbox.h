@@ -8,14 +8,13 @@
  ****************************************************************************/
 
 
-#ifndef QGCToolbox_h
-#define QGCToolbox_h
+#pragma once
 
-#include <QObject>
+
+#include <QtCore/QObject>
 
 class FactSystem;
 class FirmwarePluginManager;
-class AudioOutput;
 class GPSManager;
 class JoystickManager;
 class FollowMe;
@@ -33,8 +32,11 @@ class MAVLinkLogManager;
 class QGCCorePlugin;
 class SettingsManager;
 class ADSBVehicleManager;
-#if defined(QGC_ENABLE_PAIRING)
-class PairingManager;
+#ifndef QGC_AIRLINK_DISABLED
+class AirLinkManager;
+#endif
+#ifdef CONFIG_UTM_ADAPTER
+class UTMSPManager;
 #endif
 
 /// This is used to manage all of our top level services/tools
@@ -45,7 +47,6 @@ public:
     QGCToolbox(QGCApplication* app);
 
     FirmwarePluginManager*      firmwarePluginManager   () { return _firmwarePluginManager; }
-    AudioOutput*                audioOutput             () { return _audioOutput; }
     JoystickManager*            joystickManager         () { return _joystickManager; }
     LinkManager*                linkManager             () { return _linkManager; }
     MAVLinkProtocol*            mavlinkProtocol         () { return _mavlinkProtocol; }
@@ -61,11 +62,14 @@ public:
     QGCCorePlugin*              corePlugin              () { return _corePlugin; }
     SettingsManager*            settingsManager         () { return _settingsManager; }
     ADSBVehicleManager*         adsbVehicleManager      () { return _adsbVehicleManager; }
-#if defined(QGC_ENABLE_PAIRING)
-    PairingManager*             pairingManager          () { return _pairingManager; }
-#endif
 #ifndef __mobile__
     GPSManager*                 gpsManager              () { return _gpsManager; }
+#endif
+#ifndef QGC_AIRLINK_DISABLED
+    AirLinkManager*              airlinkManager          () { return _airlinkManager; }
+#endif
+#ifdef CONFIG_UTM_ADAPTER
+    UTMSPManager*                utmspManager             () { return _utmspManager; }
 #endif
 
 private:
@@ -73,7 +77,6 @@ private:
     void _scanAndLoadPlugins(QGCApplication *app);
 
 
-    AudioOutput*                _audioOutput            = nullptr;
     FactSystem*                 _factSystem             = nullptr;
     FirmwarePluginManager*      _firmwarePluginManager  = nullptr;
 #ifndef __mobile__
@@ -94,10 +97,13 @@ private:
     QGCCorePlugin*              _corePlugin             = nullptr;
     SettingsManager*            _settingsManager        = nullptr;
     ADSBVehicleManager*         _adsbVehicleManager     = nullptr;
-#if defined(QGC_ENABLE_PAIRING)
-    PairingManager*             _pairingManager         = nullptr;
+#ifndef QGC_AIRLINK_DISABLED
+    AirLinkManager*             _airlinkManager         = nullptr;
 #endif
 
+#ifdef CONFIG_UTM_ADAPTER
+    UTMSPManager*                _utmspManager            = nullptr;
+#endif
     friend class QGCApplication;
 };
 
@@ -118,5 +124,3 @@ protected:
     QGCApplication* _app;
     QGCToolbox*     _toolbox;
 };
-
-#endif

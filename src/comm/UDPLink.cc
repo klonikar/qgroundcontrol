@@ -7,21 +7,17 @@
  *
  ****************************************************************************/
 
-#include <QtGlobal>
-#include <QTimer>
-#include <QList>
-#include <QDebug>
-#include <QMutexLocker>
-#include <QNetworkProxy>
-#include <QNetworkInterface>
-#include <iostream>
-#include <QHostInfo>
-
 #include "UDPLink.h"
-#include "QGC.h"
 #include "QGCApplication.h"
 #include "SettingsManager.h"
 #include "AutoConnectSettings.h"
+
+#include <QtCore/QList>
+#include <QtCore/QMutexLocker>
+#include <QtNetwork/QNetworkProxy>
+#include <QtNetwork/QNetworkInterface>
+#include <QtNetwork/QHostInfo>
+#include <QtNetwork/QUdpSocket>
 
 static const char* kZeroconfRegistration = "_qgroundcontrol._udp";
 

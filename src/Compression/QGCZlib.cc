@@ -9,9 +9,8 @@
 
 #include "QGCZlib.h"
 
-#include <QFile>
-#include <QDir>
-#include <QtDebug>
+#include <QtCore/QFile>
+#include <QtCore/QtDebug>
 
 #include "zlib.h"
 

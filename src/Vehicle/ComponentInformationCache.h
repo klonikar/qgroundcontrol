@@ -9,13 +9,10 @@
 
 #pragma once
 
-#include "QGCLoggingCategory.h"
-
-#include <QString>
-#include <QDir>
-#include <QMap>
-
-#include <cstdint>
+#include <QtCore/QLoggingCategory>
+#include <QtCore/QString>
+#include <QtCore/QDir>
+#include <QtCore/QMap>
 
 Q_DECLARE_LOGGING_CATEGORY(ComponentInformationCacheLog)
 

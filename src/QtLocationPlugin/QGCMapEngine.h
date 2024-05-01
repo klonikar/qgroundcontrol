@@ -16,15 +16,15 @@
  *
  */
 
-#ifndef QGC_MAP_ENGINE_H
-#define QGC_MAP_ENGINE_H
+#pragma once
 
-#include <QString>
-
-#include "QGCMapUrlEngine.h"
 #include "QGCMapEngineData.h"
 #include "QGCTileCacheWorker.h"
+#include "QGCTileSet.h"
 
+#include <QtCore/QString>
+
+class UrlFactory;
 
 //-----------------------------------------------------------------------------
 class QGCMapEngine : public QObject
@@ -45,7 +45,6 @@ public:
     QString                     tileHashToType      (const QString& tileHash);
     QString                     getTileHash         (const QString& type, int x, int y, int z);
     quint32                     getMaxDiskCache     ();
-    void                        setMaxDiskCache     (quint32 size);
     quint32                     getMaxMemCache      ();
     void                        setMaxMemCache      (quint32 size);
     const QString               getCachePath        () { return _cachePath; }
@@ -84,8 +83,6 @@ private:
     QString                 _cacheFile;
     UrlFactory*             _urlFactory;
     QString                 _userAgent;
-    quint32                 _maxDiskCache;
-    quint32                 _maxMemCache;
     bool                    _prunning;
     bool                    _cacheWasReset;
     bool                    _isInternetActive;
@@ -93,5 +90,3 @@ private:
 
 extern QGCMapEngine*    getQGCMapEngine();
 extern void             destroyMapEngine();
-
-#endif // QGC_MAP_ENGINE_H

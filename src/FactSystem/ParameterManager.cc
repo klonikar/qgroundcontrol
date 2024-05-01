@@ -13,17 +13,19 @@
 #include "QGCApplication.h"
 #include "UASMessageHandler.h"
 #include "FirmwarePlugin.h"
-#include "UAS.h"
-#include "JsonHelper.h"
 #include "ComponentInformationManager.h"
 #include "CompInfoParam.h"
 #include "FTPManager.h"
+#include "Vehicle.h"
+#include "AutoPilotPlugin.h"
+#include "MAVLinkProtocol.h"
+#include "FactSystem.h"
+#include "QGC.h"
 
-#include <QEasingCurve>
-#include <QFile>
-#include <QDebug>
-#include <QVariantAnimation>
-#include <QJsonArray>
+#include <QtCore/QEasingCurve>
+#include <QtCore/QFile>
+#include <QtCore/QVariantAnimation>
+#include <QtCore/QStandardPaths>
 
 QGC_LOGGING_CATEGORY(ParameterManagerVerbose1Log,           "ParameterManagerVerbose1Log")
 QGC_LOGGING_CATEGORY(ParameterManagerVerbose2Log,           "ParameterManagerVerbose2Log")
@@ -174,7 +176,7 @@ void ParameterManager::mavlinkMessageReceived(mavlink_message_t message)
         mavlink_msg_param_value_decode(&message, &param_value);
 
         // This will null terminate the name string
-        char parameterNameWithNull[MAVLINK_MSG_PARAM_VALUE_FIELD_PARAM_ID_LEN] = {};
+        char parameterNameWithNull[MAVLINK_MSG_PARAM_VALUE_FIELD_PARAM_ID_LEN + 1] = {};
         strncpy(parameterNameWithNull, param_value.param_id, MAVLINK_MSG_PARAM_VALUE_FIELD_PARAM_ID_LEN);
         QString parameterName(parameterNameWithNull);
 
@@ -1423,6 +1425,8 @@ bool ParameterManager::pendingWrites(void)
 
     return false;
 }
+
+Vehicle* ParameterManager::vehicle(void) { return _vehicle; }
 
 
 /* Parse the binary parameter file and inject the parameters in the qgc

@@ -12,12 +12,10 @@
 #include "QGCApplication.h"
 #include "MissionCommandTree.h"
 #include "MissionCommandUIInfo.h"
+#include "MissionItem.h"
 #include "FactMetaData.h"
 #include "ComplexMissionItem.h"
 #include "QmlObjectListModel.h"
-
-#include <QDomDocument>
-#include <QStringList>
 
 const char* KMLPlanDomDocument::_missionLineStyleName =     "MissionLineStyle";
 const char* KMLPlanDomDocument::surveyPolygonStyleName =   "SurveyPolygonStyle";

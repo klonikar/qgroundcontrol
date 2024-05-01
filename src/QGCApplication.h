@@ -9,37 +9,24 @@
 
 #pragma once
 
-#include <QApplication>
-#include <QTimer>
-#include <QElapsedTimer>
-#include <QMap>
-#include <QSet>
-#include <QMetaMethod>
-#include <QMetaObject>
+#include <QtWidgets/QApplication>
+#include <QtCore/QTimer>
+#include <QtCore/QElapsedTimer>
+#include <QtCore/QMap>
+#include <QtCore/QSet>
+#include <QtCore/QEvent>
+#include <QtCore/QMetaMethod>
+#include <QtCore/QMetaObject>
+#include <QtCore/QTranslator>
 
 // These private headers are require to implement the signal compress support below
-#include <private/qthread_p.h>
-#include <private/qobject_p.h>
-
-#include "LinkConfiguration.h"
-#include "MAVLinkProtocol.h"
-#include "FlightMapSettings.h"
-#include "FirmwarePluginManager.h"
-#include "MultiVehicleManager.h"
-#include "JoystickManager.h"
-#include "AudioOutput.h"
-#include "UASMessageHandler.h"
-#include "FactSystem.h"
-#include "GPSRTKFactGroup.h"
-
-#ifdef QGC_RTLAB_ENABLED
-#include "OpalLink.h"
-#endif
+#include <QtCore/private/qthread_p.h>
+#include <QtCore/private/qobject_p.h>
 
 // Work around circular header includes
 class QQmlApplicationEngine;
-class QGCSingleton;
 class QGCToolbox;
+class QQuickWindow;
 
 /**
  * @brief The main application and management class.
@@ -87,8 +74,6 @@ public:
 
     /// Is Internet available?
     bool isInternetAvailable();
-
-    FactGroup* gpsRtkFactGroup(void)  { return _gpsRtkFactGroup; }
 
     QTranslator& qgcJSONTranslator(void) { return _qgcTranslatorJSON; }
 
@@ -179,10 +164,6 @@ private slots:
     void _missingParamsDisplay                      (void);
     void _qgcCurrentStableVersionDownloadComplete   (QString remoteFile, QString localFile, QString errorMsg);
     bool _parseVersionText                          (const QString& versionString, int& majorVersion, int& minorVersion, int& buildVersion);
-    void _onGPSConnect                              (void);
-    void _onGPSDisconnect                           (void);
-    void _gpsSurveyInStatus                         (float duration, float accuracyMM,  double latitude, double longitude, float altitude, bool valid, bool active);
-    void _gpsNumSatellites                          (int numSatellites);
     void _showDelayedAppMessages                    (void);
 
 private:
@@ -205,7 +186,6 @@ private:
     int                 _majorVersion           = 0;
     int                 _minorVersion           = 0;
     int                 _buildVersion           = 0;
-    GPSRTKFactGroup*    _gpsRtkFactGroup        = nullptr;
     QGCToolbox*         _toolbox                = nullptr;
     QQuickWindow*       _mainRootWindow         = nullptr;
     bool                _bluetoothAvailable     = false;

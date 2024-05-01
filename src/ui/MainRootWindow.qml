@@ -20,21 +20,29 @@ import QGroundControl.ScreenTools
 import QGroundControl.FlightDisplay
 import QGroundControl.FlightMap
 
+import QGroundControl.UTMSP
+
 /// @brief Native QML top level window
 /// All properties defined here are visible to all QML pages.
 ApplicationWindow {
     id:             mainWindow
-    minimumWidth:   ScreenTools.isMobile ? Screen.width  : Math.min(ScreenTools.defaultFontPixelWidth * 100, Screen.width)
-    minimumHeight:  ScreenTools.isMobile ? Screen.height : Math.min(ScreenTools.defaultFontPixelWidth * 50, Screen.height)
+    minimumWidth:   ScreenTools.isMobile ? ScreenTools.screenWidth  : Math.min(ScreenTools.defaultFontPixelWidth * 100, Screen.width)
+    minimumHeight:  ScreenTools.isMobile ? ScreenTools.screenHeight : Math.min(ScreenTools.defaultFontPixelWidth * 50, Screen.height)
     visible:        true
+
+    property string _startTimeStamp
+    property bool   _showVisible
+    property string _flightID
+    property bool   _utmspSendActTrigger
+    property bool   _utmspStartTelemetry
 
     Component.onCompleted: {
         //-- Full screen on mobile or tiny screens
-        if (ScreenTools.isMobile || Screen.height / ScreenTools.realPixelDensity < 120) {
+        if (!ScreenTools.isFakeMobile && (ScreenTools.isMobile || Screen.height / ScreenTools.realPixelDensity < 120)) {
             mainWindow.showFullScreen()
         } else {
-            width   = ScreenTools.isMobile ? Screen.width  : Math.min(250 * Screen.pixelDensity, Screen.width)
-            height  = ScreenTools.isMobile ? Screen.height : Math.min(150 * Screen.pixelDensity, Screen.height)
+            width   = ScreenTools.isMobile ? ScreenTools.screenWidth  : Math.min(250 * Screen.pixelDensity, Screen.width)
+            height  = ScreenTools.isMobile ? ScreenTools.screenHeight : Math.min(150 * Screen.pixelDensity, Screen.height)
         }
 
         // Start the sequence of first run prompt(s)
@@ -79,11 +87,9 @@ ApplicationWindow {
         readonly property var       activeVehicle:                  QGroundControl.multiVehicleManager.activeVehicle
         readonly property real      defaultTextHeight:              ScreenTools.defaultFontPixelHeight
         readonly property real      defaultTextWidth:               ScreenTools.defaultFontPixelWidth
-        readonly property var       planMasterControllerFlyView:    flightView.planController
-        readonly property var       guidedControllerFlyView:        flightView.guidedController
+        readonly property var       planMasterControllerFlyView:    flyView.planController
+        readonly property var       guidedControllerFlyView:        flyView.guidedController
 
-        property var                planMasterControllerPlanView:   null
-        property var                currentPlanMissionItem:         planMasterControllerPlanView ? planMasterControllerPlanView.missionController.currentPlanViewItem : null
         property bool               validationError:                false   // There is a FactTextField somewhere with a validation error
 
         // Property to manage RemoteID quick acces to settings page
@@ -111,21 +117,18 @@ ApplicationWindow {
         return globals.validationError
     }
 
-    function viewSwitch(currentToolbar) {
-        toolDrawer.visible      = false
-        toolDrawer.toolSource   = ""
-    }
-
     function showPlanView() {
-        stackView.push(planViewComponenent)
+        flyView.visible = false
+        planView.visible = true
     }
 
-    function popView() {
-        stackView.pop()
+    function showFlyView() {
+        flyView.visible = true
+        planView.visible = false
     }
 
     function showTool(toolTitle, toolSource, toolIcon) {
-        toolDrawer.backIcon     = flightView.visible ? "/qmlimages/PaperPlane.svg" : "/qmlimages/Plan.svg"
+        toolDrawer.backIcon     = flyView.visible ? "/qmlimages/PaperPlane.svg" : "/qmlimages/Plan.svg"
         toolDrawer.toolTitle    = toolTitle
         toolDrawer.toolSource   = toolSource
         toolDrawer.toolIcon     = toolIcon
@@ -194,7 +197,7 @@ ApplicationWindow {
     property string closeDialogTitle: qsTr("Close %1").arg(QGroundControl.appName)
 
     function checkForUnsavedMission() {
-        if (globals.planMasterControllerPlanView && globals.planMasterControllerPlanView.dirty) {
+        if (planView._planMasterController.dirty) {
             showMessageDialog(closeDialogTitle,
                               qsTr("You have a mission edit in progress which has not been saved/sent. If you close you will lose changes. Are you sure you want to close?"),
                               Dialog.Yes | Dialog.No,
@@ -240,11 +243,24 @@ ApplicationWindow {
         color:          QGroundControl.globalPalette.window
     }
 
-    StackView {
-        id:             stackView
-        anchors.fill:   parent
+    FlyView { 
+        id:                     flyView
+        anchors.fill:           parent
+        utmspSendActTrigger:    _utmspSendActTrigger
+    }
 
-        initialItem: FlyView { id: flightView }
+    PlanView {
+        id:             planView
+        anchors.fill:   parent
+        visible:        false
+
+        onActivationParamsSent:{
+            if(_utmspEnabled){
+                _startTimeStamp = startTime
+                _showVisible = activate
+                _flightID = flightID
+            }
+        }
     }
 
     footer: LogReplayStatusBar {
@@ -286,7 +302,7 @@ ApplicationWindow {
                             imageResource:      "/qmlimages/Gears.svg"
                             onClicked: {
                                 if (!mainWindow.preventViewSwitch()) {
-                                    drawer.close()
+                                    mainWindow.closeIndicatorDrawer()
                                     mainWindow.showVehicleSetupTool()
                                 }
                             }
@@ -302,7 +318,7 @@ ApplicationWindow {
                             visible:            QGroundControl.corePlugin.showAdvancedUI
                             onClicked: {
                                 if (!mainWindow.preventViewSwitch()) {
-                                    drawer.close()
+                                    mainWindow.closeIndicatorDrawer()
                                     mainWindow.showAnalyzeTool()
                                 }
                             }
@@ -418,14 +434,6 @@ ApplicationWindow {
         }
     }
 
-    Component {
-        id: planViewComponenent
-
-        PlanView {
-            id: planView
-        }
-    }
-
     Drawer {
         id:             toolDrawer
         width:          mainWindow.width
@@ -441,6 +449,11 @@ ApplicationWindow {
         property alias toolSource:  toolDrawerLoader.source
         property alias toolIcon:    toolIcon.source
 
+        // Unload the loader only after closed, otherwise we will see a "blank" loader in the meantime
+        onClosed: {
+            toolDrawer.toolSource = ""
+        }
+        
         Rectangle {
             id:             toolDrawerToolbar
             anchors.left:   parent.left
@@ -497,7 +510,6 @@ ApplicationWindow {
                 width:              (backTextLabel.x + backTextLabel.width) - backIcon.x
                 onClicked: {
                     toolDrawer.visible      = false
-                    toolDrawer.toolSource   = ""
                 }
             }
         }
@@ -616,7 +628,7 @@ ApplicationWindow {
                 if (criticalVehicleMessagePopup.dropMessageIndicatorOnClose) {
                     criticalVehicleMessagePopup.dropMessageIndicatorOnClose = false;
                     QGroundControl.multiVehicleManager.activeVehicle.resetErrorLevelMessages();
-                    flyView.toolbar.dropMessageIndicatorTool();
+                    flyView.dropMessageIndicatorTool();
                 }
             }
         }
@@ -676,6 +688,10 @@ ApplicationWindow {
         indicatorDrawer.sourceComponent = drawerComponent
         indicatorDrawer.indicatorItem = indicatorItem
         indicatorDrawer.open()
+    }
+
+    function closeIndicatorDrawer() {
+        indicatorDrawer.close()
     }
 
     Popup {
@@ -810,5 +826,20 @@ ApplicationWindow {
                 source = ""
             }
         }
+    }
+
+    Connections{
+         target: activationbar
+         function onActivationTriggered(value){
+              _utmspSendActTrigger= value
+         }
+    }
+
+    UTMSPActivationStatusBar{
+         id:                         activationbar
+         activationStartTimestamp:  _startTimeStamp
+         activationApproval:        _showVisible && QGroundControl.utmspManager.utmspVehicle.vehicleActivation
+         flightID:                  _flightID
+         anchors.fill:              parent
     }
 }

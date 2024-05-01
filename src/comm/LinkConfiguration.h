@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <QSettings>
+#include <QtCore/QSettings>
 
 #include <memory>
 
@@ -57,6 +57,9 @@ public:
 #endif
 #ifdef QT_DEBUG
         TypeMock,       ///< Mock Link for Unitesting
+#endif
+#ifndef QGC_AIRLINK_DISABLED
+        Airlink,
 #endif
         TypeLogReplay,
         TypeLast        // Last type value (type >= TypeLast == invalid)

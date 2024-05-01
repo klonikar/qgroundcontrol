@@ -7,13 +7,11 @@
  *
  ****************************************************************************/
 
-#ifndef SyslinkComponentController_H
-#define SyslinkComponentController_H
+#pragma once
 
 #include "FactPanelController.h"
-#include "UASInterface.h"
-#include "QGCLoggingCategory.h"
-#include "AutoPilotPlugin.h"
+
+#include <QtCore/QLoggingCategory>
 
 Q_DECLARE_LOGGING_CATEGORY(SyslinkComponentControllerLog)
 
@@ -62,5 +60,3 @@ private:
     QStringList _dataRates;
 
 };
-
-#endif // SyslinkComponentController_H

@@ -9,14 +9,11 @@
 
 #pragma once
 
-#include "QmlObjectListModel.h"
 #include "QGCPalette.h"
-#include "Fact.h"
-#include "FactMetaData.h"
-#include <QObject>
-#include <QString>
-#include <QMetaObject>
-#include <QStringListModel>
+#include <QtCore/QObject>
+#include <QtCore/QString>
+#include <QtCore/QMetaObject>
+#include <QtCore/QStringListModel>
 
 // Fordward decls
 class Vehicle;

@@ -8,6 +8,8 @@
  ****************************************************************************/
 
 #include "ComponentInformationManager.h"
+#include "ComponentInformationTranslation.h"
+#include "ComponentInformationCache.h"
 #include "Vehicle.h"
 #include "FTPManager.h"
 #include "QGCLZMA.h"
@@ -16,8 +18,10 @@
 #include "CompInfoEvents.h"
 #include "CompInfoActuators.h"
 #include "QGCApplication.h"
+#include "QGCCachedFileDownload.h"
+#include "QGCLoggingCategory.h"
 
-#include <QStandardPaths>
+#include <QtCore/QStandardPaths>
 
 QGC_LOGGING_CATEGORY(ComponentInformationManagerLog, "ComponentInformationManagerLog")
 
@@ -384,7 +388,7 @@ void RequestMetaDataTypeStateMachine::_ftpDownloadProgress(float progress)
     const int maxDownloadTimeSec = 40;
     if (elapsedSec > 10 && progress < 0.5 && totalDownloadTime > maxDownloadTimeSec) {
         qCDebug(ComponentInformationManagerLog) << "Slow download, aborting. Total time (s):" << totalDownloadTime;
-        _compInfo->vehicle->ftpManager()->cancel();
+        _compInfo->vehicle->ftpManager()->cancelDownload();
     }
 }
 

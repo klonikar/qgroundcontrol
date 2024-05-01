@@ -1,6 +1,6 @@
 import QtQuick
-import QtQuick.Window
 import QtQuick.Layouts
+import QtQuick.Window
 import org.freedesktop.gstreamer.GLVideoItem
 
 Window {

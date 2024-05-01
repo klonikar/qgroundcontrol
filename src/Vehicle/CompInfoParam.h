@@ -11,12 +11,11 @@
 
 #include "CompInfo.h"
 #include "QGCMAVLink.h"
-#include "QGCLoggingCategory.h"
 #include "FactMetaData.h"
 
-#include <QObject>
+#include <QtCore/QLoggingCategory>
+#include <QtCore/QObject>
 
-class FactMetaData;
 class Vehicle;
 class FirmwarePlugin;
 

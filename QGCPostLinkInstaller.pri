@@ -56,13 +56,13 @@ installer {
             message(Keystore password not available - using debug signing)
             APK_LOCATION = $$OUT_PWD/android-build/build/outputs/apk/debug/android-build-debug.apk
         } else {
-            SIGN_OPTIONS = "--release --sign $${SOURCE_DIR}/android/android_release.keystore QGCAndroidKeyStore --storepass $$(ANDROID_KEYSTORE_PASSWORD)"
+            SIGN_OPTIONS = "--release --sign $${SOURCE_DIR}/deploy/android/android_release.keystore QGCAndroidKeyStore --storepass $$(ANDROID_KEYSTORE_PASSWORD)"
             APK_LOCATION = $$OUT_PWD/android-build/build/outputs/apk/release/android-build-release-signed.apk
         }
 
         QMAKE_POST_LINK += && mkdir -p package
         QMAKE_POST_LINK += && make apk_install_target INSTALL_ROOT=android-build
-        QMAKE_POST_LINK += && $$[QT_HOST_BINS]/androiddeployqt --verbose --input android-QGroundControl-deployment-settings.json --output $$OUT_PWD/android-build $${SIGN_OPTIONS}
-        QMAKE_POST_LINK += && cp $${APK_LOCATION} package/QGroundControl$${ANDROID_TRUE_BITNESS}.apk
+        QMAKE_POST_LINK += && $$[QT_HOST_BINS]/androiddeployqt --verbose --input android-$${TARGET}-deployment-settings.json --output $$OUT_PWD/android-build $${SIGN_OPTIONS}
+        QMAKE_POST_LINK += && cp $${APK_LOCATION} package/$${TARGET}$${ANDROID_TRUE_BITNESS}.apk
     }
 }

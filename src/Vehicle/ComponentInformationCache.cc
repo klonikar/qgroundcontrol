@@ -8,10 +8,11 @@
  ****************************************************************************/
 
 #include "ComponentInformationCache.h"
+#include "QGCLoggingCategory.h"
 
-#include <QFile>
-#include <QDirIterator>
-#include <QStandardPaths>
+#include <QtCore/QFile>
+#include <QtCore/QDirIterator>
+#include <QtCore/QStandardPaths>
 
 QGC_LOGGING_CATEGORY(ComponentInformationCacheLog, "ComponentInformationCacheLog")
 

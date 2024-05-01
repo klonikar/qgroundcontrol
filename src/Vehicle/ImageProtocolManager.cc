@@ -8,14 +8,7 @@
  ****************************************************************************/
 
 #include "ImageProtocolManager.h"
-#include "QGC.h"
-#include "MAVLinkProtocol.h"
-#include "Vehicle.h"
-#include "QGCApplication.h"
-
-#include <QFile>
-#include <QDir>
-#include <string>
+#include "QGCLoggingCategory.h"
 
 QGC_LOGGING_CATEGORY(ImageProtocolManagerLog, "ImageProtocolManagerLog")
 

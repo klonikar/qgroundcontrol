@@ -10,25 +10,29 @@
 #pragma once
 
 #include "QGCToolbox.h"
-#include "QGCApplication.h"
-#include "SettingsFact.h"
-#include "SimulatedPosition.h"
-#include "QGCLoggingCategory.h"
-#include "AppSettings.h"
-#include "ADSBVehicleManager.h"
-#include "QGCPalette.h"
 #include "QmlUnitsConversion.h"
-#if defined(QGC_ENABLE_PAIRING)
-#include "PairingManager.h"
-#endif
+#include "QGCLoggingCategory.h"
 
-#ifdef QT_DEBUG
-#include "MockLink.h"
-#endif
+#include <QtCore/QTimer>
+#include <QtCore/QPointF>
+#include <QtPositioning/QGeoCoordinate>
 
 class QGCToolbox;
 class LinkManager;
+class FactGroup;
+class QGCPalette;
+class AirLinkManager;
+class UTMSPManager;
+class ADSBVehicleManager;
+class MultiVehicleManager;
+class QGCPositionManager;
+class SettingsManager;
+class QGCCorePlugin;
+class MissionCommandTree;
+class QGCApplication;
 
+Q_MOC_INCLUDE("QGCPalette.h")
+Q_MOC_INCLUDE("FactGroup.h")
 Q_MOC_INCLUDE("LinkManager.h")
 Q_MOC_INCLUDE("QGCMapEngineManager.h")
 Q_MOC_INCLUDE("PositionManager.h")
@@ -37,6 +41,15 @@ Q_MOC_INCLUDE("MAVLinkLogManager.h")
 Q_MOC_INCLUDE("SettingsManager.h")
 Q_MOC_INCLUDE("QGCCorePlugin.h")
 Q_MOC_INCLUDE("MissionCommandTree.h")
+Q_MOC_INCLUDE("ADSBVehicleManager.h")
+Q_MOC_INCLUDE("MultiVehicleManager.h")
+Q_MOC_INCLUDE("PositionManager.h")
+#ifdef CONFIG_UTM_ADAPTER
+Q_MOC_INCLUDE("UTMSPManager.h")
+#endif
+#ifndef QGC_AIRLINK_DISABLED
+Q_MOC_INCLUDE("AirLinkManager.h")
+#endif
 
 class QGroundControlQmlGlobal : public QGCTool
 {
@@ -68,7 +81,10 @@ public:
     Q_PROPERTY(QGCCorePlugin*       corePlugin              READ    corePlugin              CONSTANT)
     Q_PROPERTY(MissionCommandTree*  missionCommandTree      READ    missionCommandTree      CONSTANT)
     Q_PROPERTY(FactGroup*           gpsRtk                  READ    gpsRtkFactGroup         CONSTANT)
-    Q_PROPERTY(bool                 supportsPairing         READ    supportsPairing         CONSTANT)
+#ifndef QGC_AIRLINK_DISABLED
+    Q_PROPERTY(AirLinkManager*      airlinkManager          READ    airlinkManager          CONSTANT)
+#endif
+    Q_PROPERTY(bool                 airlinkSupported        READ    airlinkSupported        CONSTANT)
     Q_PROPERTY(QGCPalette*          globalPalette           MEMBER  _globalPalette          CONSTANT)   ///< This palette will always return enabled colors
     Q_PROPERTY(QmlUnitsConversion*  unitsConversion         READ    unitsConversion         CONSTANT)
     Q_PROPERTY(bool                 singleFirmwareSupport   READ    singleFirmwareSupport   CONSTANT)
@@ -106,9 +122,10 @@ public:
     Q_PROPERTY(QString  elevationProviderName           READ elevationProviderName              CONSTANT)
     Q_PROPERTY(QString  elevationProviderNotice         READ elevationProviderNotice            CONSTANT)
 
+    Q_PROPERTY(bool              utmspSupported           READ    utmspSupported              CONSTANT)
 
-#if defined(QGC_ENABLE_PAIRING)
-    Q_PROPERTY(PairingManager*      pairingManager          READ pairingManager         CONSTANT)
+#ifdef CONFIG_UTM_ADAPTER
+    Q_PROPERTY(UTMSPManager*     utmspManager             READ    utmspManager                CONSTANT)
 #endif
 
     Q_INVOKABLE void    saveGlobalSetting       (const QString& key, const QString& value);
@@ -116,8 +133,8 @@ public:
     Q_INVOKABLE void    saveBoolGlobalSetting   (const QString& key, bool value);
     Q_INVOKABLE bool    loadBoolGlobalSetting   (const QString& key, bool defaultValue);
 
-    Q_INVOKABLE void    deleteAllSettingsNextBoot       () { _app->deleteAllSettingsNextBoot(); }
-    Q_INVOKABLE void    clearDeleteAllSettingsNextBoot  () { _app->clearDeleteAllSettingsNextBoot(); }
+    Q_INVOKABLE void    deleteAllSettingsNextBoot       ();
+    Q_INVOKABLE void    clearDeleteAllSettingsNextBoot  ();
 
     Q_INVOKABLE void    startPX4MockLink            (bool sendStatusText);
     Q_INVOKABLE void    startGenericMockLink        (bool sendStatusText);
@@ -146,7 +163,7 @@ public:
 
     // Property accesors
 
-    QString                 appName             ()  { return qgcApp()->applicationName(); }
+    QString                 appName             ();
     LinkManager*            linkManager         ()  { return _linkManager; }
     MultiVehicleManager*    multiVehicleManager ()  { return _multiVehicleManager; }
     QGCMapEngineManager*    mapEngineManager    ()  { return _mapEngineManager; }
@@ -159,14 +176,19 @@ public:
     FactGroup*              gpsRtkFactGroup     ()  { return _gpsRtkFactGroup; }
     ADSBVehicleManager*     adsbVehicleManager  ()  { return _adsbVehicleManager; }
     QmlUnitsConversion*     unitsConversion     ()  { return &_unitsConversion; }
-#if defined(QGC_ENABLE_PAIRING)
-    bool                    supportsPairing     ()  { return true; }
-    PairingManager*         pairingManager      ()  { return _pairingManager; }
-#else
-    bool                    supportsPairing     ()  { return false; }
-#endif
     static QGeoCoordinate   flightMapPosition   ()  { return _coord; }
     static double           flightMapZoom       ()  { return _zoom; }
+
+    AirLinkManager*         airlinkManager      ()  { return _airlinkManager; }
+#ifndef QGC_AIRLINK_DISABLED
+    bool                    airlinkSupported    ()  { return true; }
+#else
+    bool                    airlinkSupported    () { return false; }
+#endif
+
+#ifdef CONFIG_UTM_ADAPTER
+    UTMSPManager*            utmspManager         ()  {return _utmspManager;}
+#endif
 
     qreal zOrderTopMost             () { return 1000; }
     qreal zOrderWidgets             () { return 100; }
@@ -176,8 +198,8 @@ public:
     qreal zOrderTrajectoryLines     () { return 48; }
     qreal zOrderWaypointLines       () { return 47; }
 
-    bool    isVersionCheckEnabled   () { return _toolbox->mavlinkProtocol()->versionCheckEnabled(); }
-    int     mavlinkSystemID         () { return _toolbox->mavlinkProtocol()->getSystemId(); }
+    bool    isVersionCheckEnabled   ();
+    int     mavlinkSystemID         ();
 #if defined(NO_ARDUPILOT_DIALECT)
     bool    hasAPMSupport           () { return false; }
 #else
@@ -190,8 +212,8 @@ public:
     bool    hasMAVLinkInspector     () { return true; }
 #endif
 
-    QString elevationProviderName   () { return UrlFactory::kCopernicusElevationProviderKey; }
-    QString elevationProviderNotice () { return UrlFactory::kCopernicusElevationProviderNotice; }
+    QString elevationProviderName   ();
+    QString elevationProviderNotice ();
 
     bool    singleFirmwareSupport   ();
     bool    singleVehicleSupport    ();
@@ -205,11 +227,17 @@ public:
     void    setFlightMapPosition        (QGeoCoordinate& coordinate);
     void    setFlightMapZoom            (double zoom);
 
-    QString parameterFileExtension  (void) const  { return AppSettings::parameterFileExtension; }
-    QString missionFileExtension    (void) const    { return AppSettings::missionFileExtension; }
-    QString telemetryFileExtension  (void) const  { return AppSettings::telemetryFileExtension; }
+    QString parameterFileExtension  (void) const;
+    QString missionFileExtension    (void) const;
+    QString telemetryFileExtension  (void) const;
 
     QString qgcVersion              (void) const;
+
+#ifdef CONFIG_UTM_ADAPTER
+    bool    utmspSupported() { return true; }
+#else
+    bool    utmspSupported() { return false; }
+#endif
 
     // Overrides from QGCTool
     virtual void setToolbox(QGCToolbox* toolbox);
@@ -235,11 +263,12 @@ private:
     FirmwarePluginManager*  _firmwarePluginManager  = nullptr;
     SettingsManager*        _settingsManager        = nullptr;
     FactGroup*              _gpsRtkFactGroup        = nullptr;
+    AirLinkManager*         _airlinkManager         = nullptr;
     ADSBVehicleManager*     _adsbVehicleManager     = nullptr;
     QGCPalette*             _globalPalette          = nullptr;
     QmlUnitsConversion      _unitsConversion;
-#if defined(QGC_ENABLE_PAIRING)
-    PairingManager*         _pairingManager         = nullptr;
+#ifdef CONFIG_UTM_ADAPTER
+    UTMSPManager*            _utmspManager;
 #endif
 
     bool                    _skipSetupPage          = false;

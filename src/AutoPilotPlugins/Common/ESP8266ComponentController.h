@@ -13,15 +13,11 @@
 ///     @brief  ESP8266 WiFi Config Qml Controller
 ///     @author Gus Grubba <gus@auterion.com>
 
-#ifndef ESP8266ComponentController_H
-#define ESP8266ComponentController_H
-
-#include <QTimer>
+#pragma once
 
 #include "FactPanelController.h"
-#include "UASInterface.h"
-#include "QGCLoggingCategory.h"
-#include "AutoPilotPlugin.h"
+
+#include <QtCore/QLoggingCategory>
 
 Q_DECLARE_LOGGING_CATEGORY(ESP8266ComponentControllerLog)
 
@@ -106,5 +102,3 @@ private:
     int         _waitType;
     int         _retries;
 };
-
-#endif // ESP8266ComponentController_H

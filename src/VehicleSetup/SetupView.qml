@@ -147,7 +147,7 @@ Rectangle {
                 font.pointSize:         ScreenTools.mediumFontPointSize
                 text:                   qsTr("%1 does not currently support setup of your vehicle type. ").arg(QGroundControl.appName) +
                                         "If your vehicle is already configured you can still Fly."
-                onLinkActivated: Qt.openUrlExternally(link)
+                onLinkActivated: (link) => Qt.openUrlExternally(link)
             }
         }
     }
@@ -166,7 +166,7 @@ Rectangle {
                 text:                   qsTr("Vehicle settings and info will display after connecting your vehicle.") +
                                         (ScreenTools.isMobile || !_corePlugin.options.showFirmwareUpgrade ? "" : " Click Firmware on the left to upgrade your vehicle.")
 
-                onLinkActivated: Qt.openUrlExternally(link)
+                onLinkActivated: (link) => Qt.openUrlExternally(link)
             }
         }
     }
@@ -187,7 +187,7 @@ Rectangle {
                 text:                   qsTr("You are currently connected to a vehicle but it did not return the full parameter list. ") +
                                         qsTr("As a result, the full set of vehicle setup options are not available.")
 
-                onLinkActivated: Qt.openUrlExternally(link)
+                onLinkActivated: (link) => Qt.openUrlExternally(link)
             }
         }
     }
@@ -223,20 +223,6 @@ Rectangle {
         ColumnLayout {
             id:         buttonColumn
             spacing:    _defaultTextHeight / 2
-
-            Repeater {
-                model:                  _corePlugin ? _corePlugin.settingsPages : []
-                visible:                _corePlugin && _corePlugin.options.combineSettingsAndSetup
-                SubMenuButton {
-                    imageResource:      modelData.icon
-                    setupIndicator:     false
-                    buttonGroup:     setupButtonGroup
-                    text:               modelData.title
-                    visible:            _corePlugin && _corePlugin.options.combineSettingsAndSetup
-                    onClicked:          showPanel(this, modelData.url)
-                    Layout.fillWidth:   true
-                }
-            }
 
             SubMenuButton {
                 id:                 summaryButton

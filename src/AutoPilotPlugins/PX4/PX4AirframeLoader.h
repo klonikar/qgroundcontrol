@@ -13,18 +13,16 @@
 
 #include <QObject>
 #include <QMap>
-#include <QXmlStreamReader>
 #include <QLoggingCategory>
 
-#include "ParameterManager.h"
-#include "FactSystem.h"
-#include "UASInterface.h"
 #include "AutoPilotPlugin.h"
 
 /// @file PX4AirframeLoader.h
 ///     @author Lorenz Meier <lm@qgroundcontrol.org>
 
 Q_DECLARE_LOGGING_CATEGORY(PX4AirframeLoaderLog)
+
+class FactMetaData;
 
 /// Collection of Parameter Facts for PX4 AutoPilot
 
@@ -34,7 +32,7 @@ class PX4AirframeLoader : QObject
 
 public:
     /// @param uas Uas which this set of facts is associated with
-    PX4AirframeLoader(AutoPilotPlugin* autpilot,UASInterface* uas, QObject* parent = nullptr);
+    PX4AirframeLoader(AutoPilotPlugin* autpilot, QObject* parent = nullptr);
 
     static void loadAirframeMetaData(void);
 

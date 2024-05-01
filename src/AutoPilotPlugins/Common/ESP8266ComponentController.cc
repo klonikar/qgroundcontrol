@@ -13,12 +13,9 @@
 ///     @author Gus Grubba <gus@auterion.com>
 
 #include "ESP8266ComponentController.h"
-#include "QGCApplication.h"
-#include "UAS.h"
 #include "ParameterManager.h"
-
-#include <QHostAddress>
-#include <QtEndian>
+#include "QGCLoggingCategory.h"
+#include <QtNetwork/QHostAddress>
 
 QGC_LOGGING_CATEGORY(ESP8266ComponentControllerLog, "ESP8266ComponentControllerLog")
 

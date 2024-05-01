@@ -54,10 +54,11 @@ T.ComboBox {
     }
 
     function _calcPopupWidth() {
-        if (_onCompleted && model) {
+        _popupWidth = control.width
+        if (_onCompleted && sizeToContents && model) {
             var largestTextWidth = 0
             for (var i = 0; i < model.length; i++){
-                textMetrics.text = model[i]
+                textMetrics.text = control.textRole ? (Array.isArray(control.model) ? model[i][control.textRole] : model[control.textRole]) : model[i]
                 largestTextWidth = Math.max(textMetrics.width, largestTextWidth)
             }
             _popupWidth = largestTextWidth + itemDelegateMetrics.leftPadding + itemDelegateMetrics.rightPadding
@@ -105,7 +106,7 @@ T.ComboBox {
         height:                 ScreenTools.defaultFontPixelWidth
         width:                  height
         source:                 "/qmlimages/arrow-down.png"
-        color:                  qgcPal.text
+        color:                  qgcPal.buttonText
     }
 
     // The label of the button
@@ -115,7 +116,7 @@ T.ComboBox {
         anchors.horizontalCenter:   centeredLabel ? parent.horizontalCenter : undefined
         text:                       control.alternateText === "" ? control.currentText : control.alternateText
         font:                       control.font
-        color:                      qgcPal.text
+        color:                      qgcPal.buttonText
     }
 
     background: Rectangle {

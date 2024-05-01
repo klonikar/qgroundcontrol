@@ -13,15 +13,12 @@
 ///     @brief Radio Config Qml Controller
 ///     @author Don Gagne <don@thegagnes.com
 
-#ifndef RadioComponentController_H
-#define RadioComponentController_H
-
-#include <QTimer>
+#pragma once
 
 #include "FactPanelController.h"
-#include "UASInterface.h"
-#include "QGCLoggingCategory.h"
-#include "AutoPilotPlugin.h"
+
+#include <QtCore/QLoggingCategory>
+#include <QtQuick/QQuickItem>
 
 Q_DECLARE_LOGGING_CATEGORY(RadioComponentControllerLog)
 Q_DECLARE_LOGGING_CATEGORY(RadioComponentControllerVerboseLog)
@@ -320,5 +317,3 @@ private:
     static RadioComponentController*    _unitTestController;
 #endif
 };
-
-#endif // RadioComponentController_H

@@ -12,14 +12,15 @@
 
 #pragma once
 
-#include "QGCLoggingCategory.h"
 #include "Joystick.h"
-#include "MultiVehicleManager.h"
 #include "QGCToolbox.h"
 
-#include <QVariantList>
+#include <QtCore/QVariantList>
+#include <QtCore/QTimer>
 
 Q_DECLARE_LOGGING_CATEGORY(JoystickManagerLog)
+
+class MultiVehicleManager;
 
 /// Joystick Manager
 class JoystickManager : public QGCTool

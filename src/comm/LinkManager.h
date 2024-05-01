@@ -9,34 +9,36 @@
 
 #pragma once
 
-#include <QList>
-#include <QMultiMap>
-#include <QMutex>
-
-#include <limits>
-
 #include "LinkConfiguration.h"
 #include "LinkInterface.h"
-#include "QGCLoggingCategory.h"
 #include "QGCToolbox.h"
-#include "MAVLinkProtocol.h"
-#if !defined(__mobile__)
-#include "LogReplayLink.h"
-#include "UdpIODevice.h"
-#endif
 #include "QmlObjectListModel.h"
 
 #ifndef NO_SERIAL_LINK
-    #include "SerialLink.h"
+    #include "QGCSerialPortInfo.h"
+    #ifndef __mobile__
+        #include "UdpIODevice.h"
+    #endif
 #endif
+
+#include <QtCore/QList>
+#include <QtCore/QStringList>
+#include <QtCore/QTimer>
+#include <QtCore/QLoggingCategory>
+
+#include <limits>
 
 Q_DECLARE_LOGGING_CATEGORY(LinkManagerLog)
 Q_DECLARE_LOGGING_CATEGORY(LinkManagerVerboseLog)
 
 class QGCApplication;
+class MAVLinkProtocol;
 class UDPConfiguration;
 class AutoConnectSettings;
 class LogReplayLink;
+#ifndef NO_SERIAL_LINK
+    class SerialLink;
+#endif
 
 /// @brief Manage communication links
 ///
@@ -154,11 +156,13 @@ private:
     void                _updateSerialPorts          (void);
     void                _removeConfiguration        (LinkConfiguration* config);
     void                _addUDPAutoConnectLink      (void);
+#ifdef QGC_ZEROCONF_ENABLED
     void                _addZeroConfAutoConnectLink (void);
+#endif
     void                _addMAVLinkForwardingLink   (void);
     bool                _isSerialPortConnected      (void);
     void                _createDynamicForwardLink   (const char* linkName, QString hostName);
-
+    bool                _allowAutoConnectToBoard    (QGCSerialPortInfo::BoardType_t boardType);
 #ifndef NO_SERIAL_LINK
     bool                _portAlreadyConnected       (const QString& portName);
 #endif

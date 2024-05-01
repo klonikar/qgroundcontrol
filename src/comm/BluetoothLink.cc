@@ -7,24 +7,21 @@
  *
  ****************************************************************************/
 
-#include <QtGlobal>
-#include <QTimer>
-#include <QList>
-#include <QDebug>
-#include <iostream>
+#include "BluetoothLink.h"
+#include "QGCApplication.h"
+#include "LinkManager.h"
 
 #include <QtBluetooth/QBluetoothDeviceDiscoveryAgent>
 #include <QtBluetooth/QBluetoothLocalDevice>
 #include <QtBluetooth/QBluetoothUuid>
 #include <QtBluetooth/QBluetoothSocket>
-
-#include "QGCApplication.h"
-#include "BluetoothLink.h"
-#include "QGC.h"
-#include "LinkManager.h"
+#ifdef Q_OS_IOS
+#include <QtBluetooth/QBluetoothServiceDiscoveryAgent>
+#endif
 
 BluetoothLink::BluetoothLink(SharedLinkConfigurationPtr& config)
-    : LinkInterface     (config)
+    : LinkInterface(config)
+    , _bluetoothConfig(qobject_cast<BluetoothConfiguration*>(config.get()))
 {
 
 }
@@ -32,7 +29,7 @@ BluetoothLink::BluetoothLink(SharedLinkConfigurationPtr& config)
 BluetoothLink::~BluetoothLink()
 {
     disconnect();
-#ifdef __ios__
+#ifdef Q_OS_IOS
     if(_discoveryAgent) {
         _shutDown = true;
         _discoveryAgent->stop();
@@ -72,7 +69,7 @@ void BluetoothLink::readBytes()
 
 void BluetoothLink::disconnect(void)
 {
-#ifdef __ios__
+#ifdef Q_OS_IOS
     if(_discoveryAgent) {
         _shutDown = true;
         _discoveryAgent->stop();
@@ -98,7 +95,7 @@ bool BluetoothLink::_connect(void)
 
 bool BluetoothLink::_hardwareConnect()
 {
-#ifdef __ios__
+#ifdef Q_OS_IOS
     if(_discoveryAgent) {
         _shutDown = true;
         _discoveryAgent->stop();
@@ -113,7 +110,7 @@ bool BluetoothLink::_hardwareConnect()
     _discoveryAgent->start();
 #else
     _createSocket();
-    _targetSocket->connectToService(QBluetoothAddress(qobject_cast<BluetoothConfiguration*>(_config.get())->device().address), QBluetoothUuid(QBluetoothUuid::ServiceClassUuid::SerialPort));
+    _targetSocket->connectToService(QBluetoothAddress(_bluetoothConfig->device().address), QBluetoothUuid(QBluetoothUuid::ServiceClassUuid::SerialPort));
 #endif
     return true;
 }
@@ -134,12 +131,12 @@ void BluetoothLink::_createSocket()
     QObject::connect(_targetSocket, &QBluetoothSocket::errorOccurred, this, &BluetoothLink::deviceError);
 }
 
-#ifdef __ios__
+#ifdef Q_OS_IOS
 void BluetoothLink::serviceDiscovered(const QBluetoothServiceInfo& info)
 {
     if(!info.device().name().isEmpty() && !_targetSocket)
     {
-        if(_config->device().uuid == info.device().deviceUuid() && _config->device().name == info.device().name())
+        if(_bluetoothConfig->device().uuid == info.device().deviceUuid() && _bluetoothConfig->device().name == info.device().name())
         {
             _createSocket();
             _targetSocket->connectToService(info);
@@ -148,7 +145,7 @@ void BluetoothLink::serviceDiscovered(const QBluetoothServiceInfo& info)
 }
 #endif
 
-#ifdef __ios__
+#ifdef Q_OS_IOS
 void BluetoothLink::discoveryFinished()
 {
     if(_discoveryAgent && !_shutDown)
@@ -159,7 +156,7 @@ void BluetoothLink::discoveryFinished()
         if(!_targetSocket)
         {
             _connectState = false;
-            emit communicationError("Could not locate Bluetooth device:", _config->device().name);
+            emit communicationError("Could not locate Bluetooth device:", _bluetoothConfig->device().name);
         }
     }
 }
@@ -236,7 +233,7 @@ void BluetoothConfiguration::saveSettings(QSettings& settings, const QString& ro
 {
     settings.beginGroup(root);
     settings.setValue("deviceName", _device.name);
-#ifdef __ios__
+#ifdef Q_OS_IOS
     settings.setValue("uuid", _device.uuid.toString());
 #else
     settings.setValue("address",_device.address);
@@ -248,7 +245,7 @@ void BluetoothConfiguration::loadSettings(QSettings& settings, const QString& ro
 {
     settings.beginGroup(root);
     _device.name    = settings.value("deviceName", _device.name).toString();
-#ifdef __ios__
+#ifdef Q_OS_IOS
     QString suuid   = settings.value("uuid", _device.uuid.toString()).toString();
     _device.uuid    = QUuid(suuid);
 #else
@@ -299,7 +296,7 @@ void BluetoothConfiguration::deviceDiscovered(QBluetoothDeviceInfo info)
 #endif
         BluetoothData data;
         data.name    = info.name();
-#ifdef __ios__
+#ifdef Q_OS_IOS
         data.uuid    = info.deviceUuid();
 #else
         data.address = info.address().toString();
@@ -332,7 +329,7 @@ void BluetoothConfiguration::setDevName(const QString &name)
         {
             _device = data;
             emit devNameChanged();
-#ifndef __ios__
+#ifndef Q_OS_IOS
             emit addressChanged();
 #endif
             return;
@@ -342,7 +339,7 @@ void BluetoothConfiguration::setDevName(const QString &name)
 
 QString BluetoothConfiguration::address()
 {
-#ifdef __ios__
+#ifdef Q_OS_IOS
     return {};
 #else
     return _device.address;

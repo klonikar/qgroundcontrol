@@ -98,8 +98,8 @@ linux {
         QMAKE_CXXFLAGS += -fvisibility=hidden
         QMAKE_CXXFLAGS_WARN_ON += -Werror \
             -Wno-unused-parameter \         # gst-plugins-good
-            -Wno-unused-but-set-variable \ # eigen & QGCTileCacheWorker.cpp
-            -Wno-deprecated-declarations    # eigen
+            -Wno-unused-but-set-variable \ # QGCTileCacheWorker.cpp
+            -Wno-deprecated-declarations
     } else {
         error("Unsupported Mac toolchain, only 64-bit LLVM+clang is supported")
     }
@@ -242,10 +242,10 @@ AndroidBuild {
 
     message(Android version info: $${ANDROID_VERSION_CODE} bitness:$${ANDROID_VERSION_BITNESS} major:$${MAJOR_VERSION} minor:$${MINOR_VERSION} patch:$${PATCH_VERSION} dev:$${DEV_VERSION})
 
-    ANDROID_VERSION_NAME    = APP_VERSION_STR
-}
+    ANDROID_VERSION_NAME    = $${APP_VERSION_STR}
 
-DEFINES += EIGEN_MPL2_ONLY
+    QMAKE_LFLAGS += -Wl,-Bsymbolic
+}
 
 # Installer configuration
 

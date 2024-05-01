@@ -7,12 +7,8 @@
  *
  ****************************************************************************/
 
-
+#pragma once
 /// @file
-///     @author Don Gagne <don@thegagnes.com>
-
-#ifndef FirmwarePlugin_H
-#define FirmwarePlugin_H
 
 #include "QGCMAVLink.h"
 #include "VehicleComponent.h"
@@ -21,14 +17,16 @@
 #include "RallyPointManager.h"
 #include "FollowMe.h"
 
-#include <QList>
-#include <QString>
-#include <QVariantList>
+#include <QtCore/QList>
+#include <QtCore/QString>
+#include <QtCore/QVariantList>
 
 class Vehicle;
-class QGCCameraControl;
+class MavlinkCameraControl;
 class QGCCameraManager;
 class Autotune;
+class LinkInterface;
+class FactGroup;
 
 /// This is the base class for Firmware specific plugins
 ///
@@ -245,7 +243,7 @@ public:
 
     /// Returns the internal resource parameter meta date file.
     /// Important: Only CompInfoParam code should use this method
-    virtual QString _internalParameterMetaDataFile(Vehicle* /*vehicle*/) { return QString(); }
+    virtual QString _internalParameterMetaDataFile(const Vehicle* /*vehicle*/) const { return QString(); }
 
     /// Loads the specified parameter meta data file.
     /// @return Opaque parameter meta data information which must be stored with Vehicle. Vehicle is responsible to
@@ -292,11 +290,8 @@ public:
     /// Return the resource file which contains the vehicle icon used in the flight view when the view is light (Map for instance)
     virtual QString vehicleImageOutline(const Vehicle* vehicle) const;
 
-    /// Return the resource file which contains the vehicle icon used in the compass
-    virtual QString vehicleImageCompass(const Vehicle* vehicle) const;
-
-    // This is the expanded item for the main status indicator
-    virtual QVariant mainStatusIndicatorExpandedItem(const Vehicle* vehicle) const;
+    // This is the content item for the expanded portion of the main status indicator
+    virtual QVariant mainStatusIndicatorContentItem(const Vehicle* vehicle) const;
 
     /// Returns the list of toolbar tool indicators associated with a vehicle
     ///     signals toolIndicatorsChanged
@@ -316,7 +311,7 @@ public:
     virtual QGCCameraManager* createCameraManager(Vehicle *vehicle);
 
     /// Camera control.
-    virtual QGCCameraControl* createCameraControl(const mavlink_camera_information_t* info, Vehicle* vehicle, int compID, QObject* parent = nullptr);
+    virtual MavlinkCameraControl* createCameraControl(const mavlink_camera_information_t* info, Vehicle* vehicle, int compID, QObject* parent = nullptr);
 
     /// Returns a pointer to a dictionary of firmware-specific FactGroups
     virtual QMap<QString, FactGroup*>* factGroups(void);
@@ -345,8 +340,8 @@ public:
 
     /// Used to check if running current version is equal or higher than the one being compared.
     /// returns 1 if current > compare, 0 if current == compare, -1 if current < compare
-    int versionCompare(Vehicle* vehicle, QString& compare);
-    int versionCompare(Vehicle* vehicle, int major, int minor, int patch);
+    int versionCompare(const Vehicle* vehicle, QString& compare) const;
+    int versionCompare(const Vehicle* vehicle, int major, int minor, int patch) const;
 
     /// Allows the Firmware plugin to override the facts meta data.
     ///     @param vehicleType - Type of current vehicle
@@ -429,5 +424,3 @@ public:
 private:
     QList<FirmwarePluginFactory*> _factoryList;
 };
-
-#endif

@@ -1,6 +1,11 @@
-add_library(QmlControls
+find_package(Qt6 REQUIRED COMPONENTS Concurrent Core Gui Location Positioning Qml Quick Widgets)
+
+qt_add_library(QmlControls STATIC
 	AppMessages.cc
 	AppMessages.h
+	CustomAction.h
+	CustomActionManager.cc
+	CustomActionManager.h
 	EditPositionDialogController.cc
 	EditPositionDialogController.h
 	FactValueGrid.cc
@@ -36,9 +41,10 @@ add_library(QmlControls
 	ToolStripAction.h
 	ToolStripActionList.cc
 	ToolStripActionList.h
-	CustomAction.h
-	CustomActionManager.h
-	CustomActionManager.cc
+    QGCMapPalette.cc
+    QGCMapPalette.h
+    QGCPalette.cc
+    QGCPalette.h
 )
 
 add_custom_target(QmlControlsQml
@@ -66,6 +72,9 @@ add_custom_target(QmlControlsQml
 		InstrumentValueValue.qml
 		JoystickThumbPad.qml
 		KMLOrSHPFileDialog.qml
+        LabelledButton.qml
+        LabelledComboBox.qml
+        LabelledLabel.qml
 		LogReplayStatusBar.qml
 		MainWindowSavedState.qml
 		MAVLinkChart.qml
@@ -87,7 +96,6 @@ add_custom_target(QmlControlsQml
 		QGCCheckBox.qml
 		QGCColoredImage.qml
 		QGCComboBox.qml
-		QGCControlDebug.qml
 		QGCDynamicObjectManager.qml
 		QGCFileDialog.qml
 		QGCFlickableHorizontalIndicator.qml
@@ -104,8 +112,8 @@ add_custom_target(QmlControlsQml
 		QGCMouseArea.qml
 		QGCMovableItem.qml
 		QGCOptionsComboBox.qml
-		QGCPipOverlay.qml
-		QGCPipState.qml
+		PipView.qml
+		PipState.qml
 		QGCPopupDialogContainer.qml
 		QGCPopupDialog.qml
 		QGCRadioButton.qml
@@ -119,12 +127,13 @@ add_custom_target(QmlControlsQml
 		QGCViewDialogContainer.qml
 		QGCViewDialog.qml
 		QGCViewMessage.qml
-		QmlTest.qml
 		RCChannelMonitor.qml
 		RCToParamDialog.qml
 		QGCRoundButton.qml
 		ScreenTools.qml
 		SectionHeader.qml
+        SelectableControl.qml
+        SettingsGroupLayout.qml
 		SliderSwitch.qml
 		SubMenuButton.qml
 		ToolStrip.qml
@@ -133,16 +142,31 @@ add_custom_target(QmlControlsQml
 )
 
 target_link_libraries(QmlControls
-	PUBLIC
-		qgc
-
-		FactSystem
-	PUBLIC
+	PRIVATE
 		Qt6::Concurrent
 		Qt6::Location
-		Qt6::SerialPort
-		Qt6::TextToSpeech
 		Qt6::Widgets
+        api
+        FirmwarePlugin
+        Geo
+        gps
+        MockLink
+		Settings
+	PUBLIC
+		Qt6::Core
+		Qt6::Gui
+		Qt6::Positioning
+		Qt6::Quick
+		ADSB
+        AirLink
+        comm
+        FactControls
+		FactSystem
+		qgc
+        Terrain
+		Utilities
+		UTMSP
+        Vehicle
 )
 
-target_include_directories(QmlControls INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(QmlControls PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

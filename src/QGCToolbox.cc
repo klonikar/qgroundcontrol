@@ -10,7 +10,6 @@
 
 #include "FactSystem.h"
 #include "FirmwarePluginManager.h"
-#include "AudioOutput.h"
 #ifndef __mobile__
 #include "GPSManager.h"
 #endif
@@ -27,16 +26,19 @@
 #include "VideoManager.h"
 #include "MAVLinkLogManager.h"
 #include "QGCCorePlugin.h"
-#include "QGCOptions.h"
 #include "SettingsManager.h"
 #include "QGCApplication.h"
 #include "ADSBVehicleManager.h"
-#if defined(QGC_ENABLE_PAIRING)
-#include "PairingManager.h"
+#ifndef QGC_AIRLINK_DISABLED
+#include "AirLinkManager.h"
 #endif
 
 #if defined(QGC_CUSTOM_BUILD)
 #include CUSTOMHEADER
+#endif
+
+#ifdef CONFIG_UTM_ADAPTER
+#include "UTMSPManager.h"
 #endif
 
  /**
@@ -60,7 +62,6 @@ QGCToolbox::QGCToolbox(QGCApplication* app)
 
     //-- Scan and load plugins
     _scanAndLoadPlugins(app);
-    _audioOutput            = new AudioOutput               (app, this);
     _factSystem             = new FactSystem                (app, this);
     _firmwarePluginManager  = new FirmwarePluginManager     (app, this);
 #ifndef __mobile__
@@ -82,8 +83,11 @@ QGCToolbox::QGCToolbox(QGCApplication* app)
 
     _mavlinkLogManager      = new MAVLinkLogManager         (app, this);
     _adsbVehicleManager     = new ADSBVehicleManager        (app, this);
-#if defined(QGC_ENABLE_PAIRING)
-    _pairingManager         = new PairingManager            (app, this);
+#ifndef QGC_AIRLINK_DISABLED
+    _airlinkManager         = new AirLinkManager            (app, this);
+#endif
+#ifdef CONFIG_UTM_ADAPTER
+    _utmspManager            = new UTMSPManager               (app, this);
 #endif
 }
 
@@ -93,7 +97,6 @@ void QGCToolbox::setChildToolboxes(void)
     _settingsManager->setToolbox(this);
 
     _corePlugin->setToolbox(this);
-    _audioOutput->setToolbox(this);
     _factSystem->setToolbox(this);
     _firmwarePluginManager->setToolbox(this);
 #ifndef __mobile__
@@ -112,8 +115,11 @@ void QGCToolbox::setChildToolboxes(void)
     _videoManager->setToolbox(this);
     _mavlinkLogManager->setToolbox(this);
     _adsbVehicleManager->setToolbox(this);
-#if defined(QGC_ENABLE_PAIRING)
-    _pairingManager->setToolbox(this);
+#ifndef QGC_AIRLINK_DISABLED
+    _airlinkManager->setToolbox(this);
+#endif
+#ifdef CONFIG_UTM_ADAPTER
+    _utmspManager->setToolbox(this);
 #endif
 }
 

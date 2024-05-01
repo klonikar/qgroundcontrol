@@ -8,11 +8,21 @@
  ****************************************************************************/
 
 #include "QGroundControlQmlGlobal.h"
+#include "QGCApplication.h"
 #include "LinkManager.h"
-
+#include "MAVLinkProtocol.h"
+#include "QGCMapUrlEngine.h"
+#include "FirmwarePluginManager.h"
+#include "AppSettings.h"
+#ifndef __mobile__
+#include "GPSManager.h"
+#endif
+#include "QGCPalette.h"
 #include <QSettings>
 #include <QLineF>
-#include <QPointF>
+#ifdef QT_DEBUG
+#include "MockLink.h"
+#endif
 
 static const char* kQmlGlobalKeyName = "QGCQml";
 
@@ -76,11 +86,16 @@ void QGroundControlQmlGlobal::setToolbox(QGCToolbox* toolbox)
     _corePlugin             = toolbox->corePlugin();
     _firmwarePluginManager  = toolbox->firmwarePluginManager();
     _settingsManager        = toolbox->settingsManager();
-    _gpsRtkFactGroup        = qgcApp()->gpsRtkFactGroup();
+#ifndef __mobile__
+    _gpsRtkFactGroup        = toolbox->gpsManager()->gpsRtkFactGroup();
+#endif
     _adsbVehicleManager     = toolbox->adsbVehicleManager();
     _globalPalette          = new QGCPalette(this);
-#if defined(QGC_ENABLE_PAIRING)
-    _pairingManager         = toolbox->pairingManager();
+#ifndef QGC_AIRLINK_DISABLED
+    _airlinkManager         = toolbox->airlinkManager();
+#endif
+#ifdef CONFIG_UTM_ADAPTER
+    _utmspManager            = toolbox->utmspManager();
 #endif
 }
 
@@ -256,11 +271,14 @@ void QGroundControlQmlGlobal::setFlightMapZoom(double zoom)
 QString QGroundControlQmlGlobal::qgcVersion(void) const
 {
     QString versionStr = qgcApp()->applicationVersion();
-#ifdef __androidArm32__
-    versionStr += QStringLiteral(" %1").arg(tr("32 bit"));
-#elif __androidArm64__
-    versionStr += QStringLiteral(" %1").arg(tr("64 bit"));
-#endif
+    if(QSysInfo::buildAbi().contains("32"))
+    {
+        versionStr += QStringLiteral(" %1").arg(tr("32 bit"));
+    }
+    else if(QSysInfo::buildAbi().contains("64"))
+    {
+        versionStr += QStringLiteral(" %1").arg(tr("64 bit"));
+    }
     return versionStr;
 }
 
@@ -306,4 +324,54 @@ QString QGroundControlQmlGlobal::altitudeModeShortDescription(AltMode altMode)
 
     // Should never get here but makes some compilers happy
     return QString();
+}
+
+bool QGroundControlQmlGlobal::isVersionCheckEnabled()
+{
+    return _toolbox->mavlinkProtocol()->versionCheckEnabled();
+}
+
+int QGroundControlQmlGlobal::mavlinkSystemID()
+{
+    return _toolbox->mavlinkProtocol()->getSystemId();
+}
+
+QString QGroundControlQmlGlobal::elevationProviderName()
+{
+    return UrlFactory::kCopernicusElevationProviderKey;
+}
+
+QString QGroundControlQmlGlobal::elevationProviderNotice()
+{
+    return UrlFactory::kCopernicusElevationProviderNotice;
+}
+
+QString QGroundControlQmlGlobal::parameterFileExtension() const
+{
+    return AppSettings::parameterFileExtension;
+}
+
+QString QGroundControlQmlGlobal::missionFileExtension() const
+{
+    return AppSettings::missionFileExtension;
+}
+
+QString QGroundControlQmlGlobal::telemetryFileExtension() const
+{
+    return AppSettings::telemetryFileExtension;
+}
+
+QString QGroundControlQmlGlobal::appName()
+{
+    return qgcApp()->applicationName();
+}
+
+void QGroundControlQmlGlobal::deleteAllSettingsNextBoot()
+{
+    _app->deleteAllSettingsNextBoot();
+}
+
+void QGroundControlQmlGlobal::clearDeleteAllSettingsNextBoot()
+{
+    _app->clearDeleteAllSettingsNextBoot();
 }

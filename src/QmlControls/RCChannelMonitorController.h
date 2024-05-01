@@ -8,15 +8,10 @@
  ****************************************************************************/
 
 
-#ifndef RCChannelMonitorController_H
-#define RCChannelMonitorController_H
-
-#include <QTimer>
+#pragma once
 
 #include "FactPanelController.h"
-#include "UASInterface.h"
-#include "QGCLoggingCategory.h"
-#include "AutoPilotPlugin.h"
+#include "Vehicle.h"
 
 class RCChannelMonitorController : public FactPanelController
 {
@@ -39,5 +34,3 @@ private slots:
 private:
     int _chanCount;
 };
-
-#endif // RCChannelMonitorController_H

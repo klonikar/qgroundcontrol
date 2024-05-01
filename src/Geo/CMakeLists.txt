@@ -1,5 +1,14 @@
+find_package(Qt6 REQUIRED COMPONENTS Core Positioning)
 
-add_library(Geo
+# include(FetchContent)
+# FetchContent_Declare(geographiclib
+# 	GIT_REPOSITORY https://github.com/geographiclib/geographiclib.git
+# 	GIT_TAG v2.3
+# 	GIT_SHALLOW TRUE
+# )
+# FetchContent_MakeAvailable(geographiclib)
+
+qt_add_library(Geo STATIC
 	Constants.hpp
 	Math.cpp
 	Math.hpp
@@ -19,12 +28,13 @@ add_library(Geo
 )
 
 target_link_libraries(Geo
+	PRIVATE
+		Qt6::Core
 	PUBLIC
-		qgc
+		Qt6::Positioning
 )
 
 target_include_directories(Geo
 	PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR}
 )
-

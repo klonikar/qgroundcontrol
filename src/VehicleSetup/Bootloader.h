@@ -11,13 +11,11 @@
 
 #include "FirmwareImage.h"
 
-#ifdef __android__
+#ifdef Q_OS_ANDROID
 #include "qserialport.h"
 #else
 #include <QSerialPort>
 #endif
-
-#include <stdint.h>
 
 /// Bootloader Utility routines. Works with PX4 and 3DR Radio bootloaders.
 class Bootloader : public QObject

@@ -9,24 +9,22 @@
 
 #pragma once
 
-#include <QString>
-#include <QList>
-#include <QMap>
-#include <QMutex>
-#include <QUdpSocket>
-#include <QMutex>
-#include <QQueue>
-#include <QByteArray>
+#include "LinkConfiguration.h"
+#include "LinkInterface.h"
+
+#include <QtCore/QString>
+#include <QtCore/QList>
+#include <QtCore/QMutex>
+#include <QtCore/QMutex>
+#include <QtCore/QByteArray>
+#include <QtNetwork/QHostAddress>
 
 #if defined(QGC_ZEROCONF_ENABLED)
 #include <dns_sd.h>
 #endif
 
-#include "QGCConfig.h"
-#include "LinkConfiguration.h"
-#include "LinkInterface.h"
-
 class LinkManager;
+class QUdpSocket;
 
 class UDPCLient {
 public:

@@ -8,23 +8,17 @@
  ****************************************************************************/
 
 
-#ifndef LogDownloadController_H
-#define LogDownloadController_H
+#pragma once
 
-#include <QObject>
-#include <QTimer>
-#include <QAbstractListModel>
-#include <QLocale>
-#include <QElapsedTimer>
-
-#include <memory>
-
-#include "UASInterface.h"
 #include "AutoPilotPlugin.h"
 #include "QmlObjectListModel.h"
 
+#include <QtCore/QObject>
+#include <QtCore/QTimer>
+#include <QtCore/QLoggingCategory>
+#include <QtCore/QDateTime>
+
 class  MultiVehicleManager;
-class  UASInterface;
 class  Vehicle;
 struct LogDownloadData;
 
@@ -107,8 +101,8 @@ signals:
 
 private slots:
     void _setActiveVehicle  (Vehicle* vehicle);
-    void _logEntry          (UASInterface *uas, uint32_t time_utc, uint32_t size, uint16_t id, uint16_t num_logs, uint16_t last_log_num);
-    void _logData           (UASInterface *uas, uint32_t ofs, uint16_t id, uint8_t count, const uint8_t *data);
+    void _logEntry          (uint32_t time_utc, uint32_t size, uint16_t id, uint16_t num_logs, uint16_t last_log_num);
+    void _logData           (uint32_t ofs, uint16_t id, uint8_t count, const uint8_t *data);
     void _processDownload   ();
 
 private:
@@ -129,7 +123,6 @@ private:
 
     QGCLogEntry* _getNextSelected();
 
-    UASInterface*       _uas;
     LogDownloadData*    _downloadData;
     QTimer              _timer;
     QmlObjectListModel  _logEntriesModel;
@@ -140,5 +133,3 @@ private:
     int                 _apmOneBased;
     QString             _downloadPath;
 };
-
-#endif
